@@ -161,7 +161,7 @@ Then open `.env` and add your API key:
 
 ```env
 GOOGLE_API_KEY=your_actual_api_key_here
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.6-flash
 ```
 
 ### Example `.env.example`

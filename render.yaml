@@ -8,6 +8,6 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.7
       - key: GEMINI_MODEL
-        value: gemini-2.0-flash
+        value: gemini-3.6-flash
       - key: GOOGLE_API_KEY
         sync: false
