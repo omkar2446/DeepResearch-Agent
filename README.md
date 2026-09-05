@@ -177,6 +177,16 @@ GEMINI_MODEL=gemini-2.0-flash
 
 # ▶️ Running the Application
 
+## Web frontend
+
+Start the web interface from the project root:
+
+```bash
+uvicorn backend.main:app --reload
+```
+
+Open `http://127.0.0.1:8000` and submit a question to receive a structured research plan.
+
 Start the Phase 1 research manager:
 
 ```bash

@@ -3,6 +3,12 @@
 import logging
 import sys
 from datetime import datetime
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
 from backend.config import Config
 from backend.agents.manager import ResearchManagerAgent
@@ -20,6 +26,123 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+app = FastAPI(title="DeepResearch Agent")
+
+
+class ResearchRequest(BaseModel):
+    """Question submitted by the frontend."""
+
+    question: str = Field(min_length=3, max_length=2000)
+
+
+@app.get("/", include_in_schema=False)
+def serve_frontend():
+    """Serve the single-page research interface."""
+
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+
+@app.post("/api/research")
+def research(request: ResearchRequest):
+    """Run the research pipeline for a question submitted by the UI."""
+
+    try:
+        config = Config.from_env()
+        config.validate()
+        question = request.question.strip()
+        manager = ResearchManagerAgent(config)
+        search_agent = SourceDiscoveryAgent(config)
+        evidence_agent = EvidenceExtractionAgent(config)
+        critic = CriticAgent(config)
+
+        plan = manager.create_research_plan(question)
+        sources = search_agent.discover_sources(question, plan, max_sources=8)
+        evidence = evidence_agent.extract_evidence(plan, sources)
+        review = critic.critique_evidence(plan, evidence)
+        answer = _create_research_answer(manager, question, plan, sources, evidence, review)
+
+        return {
+            "question": question,
+            "answer": answer,
+            "plan": plan.model_dump(),
+            "sources": sources,
+            "evidence": evidence,
+            "review": review,
+        }
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except Exception as error:
+        logger.exception("Research request failed")
+        raise HTTPException(status_code=502, detail="The research service could not answer this question.") from error
+
+
+def _create_research_answer(manager, question, plan, sources, evidence, review) -> str:
+    """Synthesize the research record into the requested report format."""
+
+    sources_text = "\n".join(
+        f"{index}. {source.get('title')} - {source.get('publisher')} ({source.get('url')})"
+        for index, source in enumerate(sources, start=1)
+    ) or "No sources were discovered."
+    evidence_text = "\n".join(
+        f"{index}. {item.get('claim')} ({item.get('confidence')} confidence)"
+        for index, item in enumerate(evidence, start=1)
+    ) or "No evidence was available."
+    gaps_text = "\n".join(f"- {gap}" for gap in review.get("gaps", [])) or "- None identified."
+    prompt = f"""Create a research report for this question using only the supplied research record:
+
+QUESTION: {question}
+RESEARCH STRATEGY: {plan.research_strategy}
+RESEARCH GOALS: {plan.research_goals}
+KEY QUESTIONS: {plan.subquestions}
+ESTIMATED TIMELINE: {plan.estimated_timeline}
+DISCOVERED SOURCES:
+{sources_text}
+EVIDENCE:
+{evidence_text}
+CRITIC REVIEW: {review.get('summary')}
+EVIDENCE GAPS:
+{gaps_text}
+
+Return ONLY the report using exactly these headings and this order:
+
+RESEARCH PLAN
+Research strategy: [explain the approach]
+Goals:
+- [goal]
+Key questions:
+- [question]
+Estimated timeline: [timeline]
+
+DISCOVERED SOURCES
+- [source title, publisher, and URL]
+
+EXTRACTED EVIDENCE
+- [claim and confidence]
+
+EVIDENCE REVIEW & VALIDATION
+Confidence: [high, medium, low, or very_low]
+Review: [what the evidence supports and where it is weak]
+Evidence gaps detected: [list gaps, or None]
+Additional research required: [Yes or No]
+
+FINAL REPORT
+[Give a direct conclusion in 3-5 short paragraphs. Distinguish task automation from
+full job replacement, describe the strongest evidence, and state the main uncertainty.]
+
+Do not mention this prompt, internal implementation details, or unsupported facts.
+"""
+
+    try:
+        response = manager.model.generate_content(prompt)
+        return response.text.strip()
+    except Exception:
+        logger.exception("Answer synthesis failed; using the critic summary")
+        return review.get("summary", "The research pipeline did not produce an answer.")
+
+
+app.mount("/", StaticFiles(directory=FRONTEND_DIR), name="frontend")
 
 
 def main():
@@ -102,6 +225,9 @@ def main():
     except Exception as e:
         logger.error("[ERROR] Error during evidence validation: %s", e)
         return 1
+
+    final_answer = _create_research_answer(manager, research_question, plan, sources, evidence, review)
+    print_final_answer(final_answer, review, sources)
     
     # Create and display research project
     try:
@@ -224,6 +350,18 @@ def print_research_project(project) -> None:
     print("  Phase 3: Evidence extraction  [DONE]")
     print("  Phase 4: Evidence validation  [DONE]")
     print("\n" + "█" * 80 + "\n")
+
+
+def print_final_answer(answer: str, review: dict, sources: list) -> None:
+    """Print the synthesized answer in a user-facing format."""
+
+    print("\n" + "=" * 80)
+    print("FINAL ANSWER")
+    print("=" * 80 + "\n")
+    print(answer)
+    print(f"\nEvidence confidence: {review.get('confidence_assessment', 'unknown').upper()}")
+    print(f"Sources reviewed: {len(sources)}")
+    print("\n" + "=" * 80 + "\n")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DeepResearch Agent</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <p class="eyebrow">DeepResearch Agent</p>
+      <h1>Ask a question.<br><span>Get a research report.</span></h1>
+      <p class="intro">A team of research agents plans, investigates, challenges, and reports on complex questions.</p>
+    </header>
+
+    <section class="workspace" aria-label="Research workspace">
+      <section class="question-section" aria-labelledby="question-heading">
+        <div class="section-heading compact-heading">
+          <span class="meta" id="question-heading">01 / Research question</span>
+          <p>Ask something complex.</p>
+        </div>
+        <form id="research-form">
+          <label for="question">Your question</label>
+          <textarea id="question" name="question" rows="5" minlength="3" maxlength="2000"
+            placeholder="Will AI replace software developers by 2030?" required></textarea>
+          <div class="form-footer">
+            <span id="char-count">0 / 2000</span>
+            <button type="submit" id="submit-button">
+              <span>Start research</span>
+              <span aria-hidden="true">&#8594;</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="answer-section" aria-labelledby="answer-heading">
+        <div class="section-heading compact-heading">
+          <span class="meta" id="answer-heading">02 / Research output</span>
+          <p>Plan, evidence, critique, and report.</p>
+        </div>
+        <div id="answer" class="answer" aria-live="polite">
+          <div class="answer-placeholder">
+            <span class="placeholder-mark" aria-hidden="true">+</span>
+            <p>Your research report will appear here.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="agent-map" aria-label="Research agent architecture">
+      <div class="section-heading">
+        <span class="meta">System architecture</span>
+        <p>One question. Four focused passes.</p>
+      </div>
+      <div class="agent-grid">
+        <article class="agent-card" data-stage="manager">
+          <span class="agent-number">01</span>
+          <h2>Research Manager</h2>
+          <p>Breaks the question into a research plan and focused subquestions.</p>
+        </article>
+        <article class="agent-card" data-stage="search">
+          <span class="agent-number">02</span>
+          <h2>Search Agent</h2>
+          <p>Finds relevant sources across technical, economic, and policy evidence.</p>
+        </article>
+        <article class="agent-card" data-stage="evidence">
+          <span class="agent-number">03</span>
+          <h2>Evidence Agent</h2>
+          <p>Extracts claims and connects each claim to its supporting source.</p>
+        </article>
+        <article class="agent-card" data-stage="critic">
+          <span class="agent-number">04</span>
+          <h2>Critic Agent</h2>
+          <p>Tests for gaps, contradictions, weak claims, and missing evidence.</p>
+        </article>
+        <article class="agent-card report-card" data-stage="report">
+          <span class="agent-number">05</span>
+          <h2>Report Agent</h2>
+          <p>Synthesizes the reviewed evidence into a direct final report.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+  <script src="/app.js?v=3"></script>
+</body>
+</html>
