@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(PROJECT_ROOT / ".env")
+DEFAULT_GEMINI_MODEL = "gemini-2.0-flash"
 
 
 @dataclass
@@ -17,7 +18,7 @@ class Config:
 
     # Google Cloud / Gemini
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL).strip() or DEFAULT_GEMINI_MODEL
 
     # Google Cloud Project (for future Firestore, Pub/Sub, etc.)
     GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID", "")
@@ -30,7 +31,7 @@ class Config:
         """Create config from environment variables."""
         return cls(
             GOOGLE_API_KEY=os.getenv("GOOGLE_API_KEY", ""),
-            GEMINI_MODEL=os.getenv("GEMINI_MODEL", "gemini-3.6-flash"),
+            GEMINI_MODEL=os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL).strip() or DEFAULT_GEMINI_MODEL,
             GCP_PROJECT_ID=os.getenv("GCP_PROJECT_ID", ""),
             LOG_LEVEL=os.getenv("LOG_LEVEL", "INFO"),
         )
